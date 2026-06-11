@@ -1,0 +1,6 @@
+{
+  "name": "Choque Fit",
+  "description": "Aplicativo fitness estilo militar com inteligência artificial punitiva e rigorosa.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
