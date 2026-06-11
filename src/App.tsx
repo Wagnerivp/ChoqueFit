@@ -396,18 +396,26 @@ export default function App() {
     setAuthError('');
     setAuthLoading(true);
     
-    const email = `${cleanPhone}@choquefit.app`;
+    const email = `u${cleanPhone}@choquefit.com`;
+    const oldEmail = `${cleanPhone}@choquefit.app`; // For compatibility with older accounts
 
     try {
       if (isLoginMode) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password: authPin });
+        let { error } = await supabase.auth.signInWithPassword({ email, password: authPin });
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
+          // Attempt fallback for older format
+          const { error: fallbackError } = await supabase.auth.signInWithPassword({ email: oldEmail, password: authPin });
+          if (!fallbackError) {
+             error = null;
+          } else if (error.message.includes('Invalid login') || fallbackError.message.includes('Invalid login')) {
             throw new Error('Credenciais inválidas. Verifique seu telefone e PIN.');
+          } else {
+            throw error;
           }
-          throw error;
         }
-        window.location.reload();
+        if (!error) {
+          window.location.reload();
+        }
       } else {
         if (!authName) {
            throw new Error('Informe seu nome de guerra (Nome completo) para cadastrar.');
