@@ -1,5 +1,6 @@
 import { Skull, ChevronRight, ShieldAlert, Fingerprint, Pencil } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import React from 'react';
 import { supabase } from './lib/supabase';
 
 type Step = 'auth' | 'intro' | 'onboarding' | 'contract' | 'dashboard' | 'trophy';
@@ -194,7 +195,9 @@ export default function App() {
            supabase.from('user_app_state').upsert({
              user_id: user.id,
              state_data: stateObj
-           }).catch(err => console.error("Falha ao salvar no Supabase", err));
+           }).then(({ error }) => {
+             if (error) console.error("Falha ao salvar no Supabase", error);
+           });
         }
       }).catch(() => {});
     }
@@ -266,8 +269,8 @@ export default function App() {
       ];
     }
     
-    if (returnAll) return variants;
-    return variants[dayOfWeek % variants.length] || variants[0];
+    if (returnAll) return variants as any;
+    return (variants[dayOfWeek % variants.length] || variants[0]) as any;
   };
 
   const currentDiet = getDietVariation(targetDay);
@@ -375,7 +378,10 @@ export default function App() {
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase) return;
+    if (!supabase) {
+      setAuthError('Falha Crítica: Supabase não conectado. Verifique as variáveis de ambiente (VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY).');
+      return;
+    }
     
     const cleanPhone = authPhone.replace(/\D/g, '');
     if (cleanPhone.length < 8) {
@@ -470,7 +476,7 @@ export default function App() {
             <div>
               <label className="block text-xs uppercase tracking-widest text-neutral-400 mb-1">CÓDIGO DE TRANSMISSÃO (CELULAR)</label>
               <div className="relative flex items-center">
-                <span className="absolute left-3 text-neutral-500 font-mono">+55</span>
+                <span className="absolute left-3 text-neutral-500 font-mono pointer-events-none">+55</span>
                 <input
                   type="tel"
                   value={authPhone}
