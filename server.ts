@@ -79,7 +79,7 @@ Como referência base, diminua destas necessidades brutas o que já possuímos n
 Retorne SOMENTE um JSON Array com os itens a comprar no formato a seguir, contendo as propriedades 'name', 'quantity' (number) e 'unit' (string ex: 'kg', 'un.').`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-1.5-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",

@@ -61,6 +61,7 @@ export default function App() {
   const [monthlySpent, setMonthlySpent] = useState(0);
   const [invoiceAmount, setInvoiceAmount] = useState('');
   const [isGeneratingShopping, setIsGeneratingShopping] = useState(false);
+  const [missionsCompleted, setMissionsCompleted] = useState<Record<string, boolean>>({});
   const [tomorrowPrepared, setTomorrowPrepared] = useState(false);
   const [currentTime, setCurrentTime] = useState(() => 
     new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -328,10 +329,13 @@ export default function App() {
         const toBuy = await response.json();
         setShoppingList(toBuy.map((item: any) => ({ ...item, price: 0 })));
       } else {
-        console.error('Failed to generate logistics list');
+        const errorData = await response.json().catch(() => null);
+        console.error('Failed to generate logistics list:', errorData);
+        alert(`Erro ao gerar lista: ${errorData?.error || 'Verifique se a chave da API do Gemini (GEMINI_API_KEY) foi adicionada ao painel Settings do AI Studio.'}`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      alert(`Erro na requisição: ${e.message}`);
     } finally {
       setIsGeneratingShopping(false);
     }
@@ -431,7 +435,11 @@ export default function App() {
         setStep('intro');
       }
     } catch (err: any) {
-      setAuthError(err.message || 'Erro durante a autenticação. Contate a base.');
+      if (err.message && err.message.toLowerCase().includes('rate limit')) {
+        setAuthError('Limite de tentativas excedido no Supabase. Desative a Confirmação de Email (Authentication > Providers > Email) e configure os Limites de Taxa (Rate Limits) no painel do Supabase, ou aguarde alguns minutos.');
+      } else {
+        setAuthError(err.message || 'Erro durante a autenticação. Contate a base.');
+      }
     } finally {
       setAuthLoading(false);
     }
@@ -1566,15 +1574,28 @@ export default function App() {
                       <div className="text-xs font-mono text-purple-500 bg-purple-500/10 px-2 py-1 rounded">EM DESENVOLVIMENTO</div>
                     </h2>
                      <div className="space-y-4 mt-8">
-                       {[1, 2, 3].map(i => (
-                         <div key={i} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-[#222] bg-black gap-4">
-                           <div>
-                             <div className="font-black text-white text-lg">MISSÃO COBERTURA #{i}</div>
-                             <div className="text-neutral-500 text-sm">Status da operação indefinido.</div>
+                       {[
+                         { id: 'm1', title: '01. HIDRATAÇÃO TÁTICA', desc: 'Atingir 100% da cota de água diária (1 garrafa por refeição).', type: 'water' },
+                         { id: 'm2', title: '02. ALIMENTAÇÃO NATIVA', desc: 'Cumprir as 4 refeições previstas sem desvios e dentro das medidas base.', type: 'diet' },
+                         { id: 'm3', title: '03. CONDICIONAMENTO FÍSICO', desc: 'Executar o Treinamento Operacional diário sem redução de intensidade.', type: 'workout' },
+                         { id: 'm4', title: '04. PREPARAÇÃO LOGÍSTICA', desc: 'Verificar a aba AMANHÃ e certificar-se de ter todos os mantimentos básicos.', type: 'logistics' },
+                       ].map((mission) => {
+                         const isCompleted = missionsCompleted[mission.id];
+                         return (
+                           <div key={mission.id} className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 border ${isCompleted ? 'border-purple-500/50 bg-purple-900/20' : 'border-[#222] bg-black'} gap-4`}>
+                             <div>
+                               <div className={`font-black text-lg ${isCompleted ? 'text-purple-400 line-through' : 'text-white'}`}>{mission.title}</div>
+                               <div className="text-neutral-500 text-sm">{mission.desc}</div>
+                             </div>
+                             <button
+                               onClick={() => setMissionsCompleted(prev => ({ ...prev, [mission.id]: !prev[mission.id] }))}
+                               className={`w-full md:w-auto px-6 py-3 object-right font-black uppercase text-sm md:py-2 transition-all ${isCompleted ? 'bg-purple-500 text-black border-purple-500 hover:bg-purple-600' : 'bg-[#111] text-neutral-400 border border-[#333] hover:border-purple-500 hover:text-white'}`}
+                             >
+                               {isCompleted ? 'CONCLUÍDA' : 'EXECUTAR ORDEM'}
+                             </button>
                            </div>
-                           <div className="text-neutral-700 font-black">BLOQUEADO</div>
-                         </div>
-                       ))}
+                         );
+                       })}
                      </div>
                   </div>
                 </>
